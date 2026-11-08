@@ -1,5 +1,8 @@
 'use strict';
 
+/* EmailJS — public key from the EmailJS dashboard */
+if (window.emailjs) { emailjs.init({ publicKey: 'Euwq8CCKEh59BUIN7' }); }
+
 (function () {
   // ---- login gate — token must be present ----
   var API = window.MindCursorAPI;
@@ -447,22 +450,27 @@ function showResult(){
   var band = sc<=3 ? 'FEW TRAITS' : sc<=6 ? 'SOME TRAITS' : 'MANY TRAITS';
   var rd   = RESULT_DATA[band];
 
-  /* Save to DB + send email */
+  /* Save to DB + send email via EmailJS */
   try { API.postResult(BANK[state.group].label, sc).catch(function(){}); } catch(e){}
   try {
-    fetch('/api/results/notify', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','X-Token': API.getToken()},
-      body: JSON.stringify({
-        group: BANK[state.group].label,
+    if (window.emailjs) {
+      emailjs.send('service_m6eoqin', 'template_64vyccb', {
+        email: session.email,
+        name: session.name || 'there',
         score: sc,
         total: total,
-        band:  band,
-        suggestions: rd.suggestions,
-        name: session.name,
-        email: session.email
-      })
-    }).catch(function(){});
+        score_text: String(sc).padStart(2, '0') + '/' + total,
+        band: band,
+        group: BANK[state.group].label,
+        headline: rd.headline,
+        summary: rd.summary,
+        color: rd.color,
+        suggestions_html: rd.suggestions.map(function(s){
+          return '<li style="margin:0 0 8px 0;">' + s + '</li>';
+        }).join('')
+      }).then(function(){ console.log('MindCursor email sent'); },
+             function(e){ console.log('MindCursor email failed', e); });
+    }
   } catch(e){}
 
   var suggestionsHtml = rd.suggestions.map(function(s){

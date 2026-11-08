@@ -1,6 +1,7 @@
 """
 MindCursor — Flask REST API
-SQLite database, SHA-256 passwords, session tokens.
+PostgreSQL database (DATABASE_URL), SHA-256 passwords, session tokens.
+SQLite was removed — no .db file is used.
 
 Endpoints:
   POST /api/auth/signup
@@ -25,34 +26,75 @@ import hashlib
 import hmac
 import os
 import secrets
-import sqlite3
 import time
 from functools import wraps
+
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 from flask import Flask, g, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 # ── Config ──────────────────────────────────────────────
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
-DB_PATH    = os.path.join(BASE_DIR, "mindcursor.db")
 STATIC_DIR = BASE_DIR
 
-ADMIN_EMAIL    = "admin@admin.com"
-ADMIN_PASSWORD = "admin123"
-PW_PEPPER      = "mindcursor$"   # must match the client-side pepper
+# PostgreSQL only — no SQLite. Set DATABASE_URL (Render / Neon)
+# or POSTGRES_URL (Vercel) in the environment. No fallback to a file.
+DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") or ""
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = "postgresql://" + DATABASE_URL[len("postgres://"):]
+
+ADMIN_EMAIL    = os.environ.get("ADMIN_EMAIL", "admin@admin.com")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")  # change in production via env
+PW_PEPPER      = os.environ.get("PW_PEPPER", "mindcursor$")   # must match the client-side pepper
 
 app = Flask(__name__, static_folder=STATIC_DIR, static_url_path="")
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 
 # ── Database ─────────────────────────────────────────────
+# PostgreSQL only — no SQLite. Set DATABASE_URL (Render / Neon)
+# or POSTGRES_URL (Vercel) in the environment.
+def _require_db_url():
+    if not DATABASE_URL:
+        raise RuntimeError(
+            "DATABASE_URL is not set. Create a Postgres database and set "
+            "DATABASE_URL (or POSTGRES_URL). SQLite was removed."
+        )
+    return DATABASE_URL
+
+
+class _DB:
+    """Thin wrapper so call sites keep db.execute(...).fetchone()/fetchall() + db.commit()."""
+    def __init__(self, conn):
+        self._conn = conn
+        self._cursors = []
+
+    def execute(self, sql, params=None):
+        cur = self._conn.cursor(cursor_factory=RealDictCursor)
+        self._cursors.append(cur)
+        cur.execute(sql, params or ())
+        return cur
+
+    def commit(self):
+        self._conn.commit()
+
+    def close(self):
+        for cur in self._cursors:
+            try:
+                cur.close()
+            except Exception:
+                pass
+        try:
+            self._conn.close()
+        except Exception:
+            pass
+
+
 def get_db():
     if "db" not in g:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA foreign_keys=ON")
-        g.db = conn
+        g.db = _DB(psycopg2.connect(_require_db_url()))
     return g.db
 
 
@@ -60,53 +102,58 @@ def get_db():
 def close_db(exc=None):
     db = g.pop("db", None)
     if db:
+        if exc:
+            try:
+                db._conn.rollback()
+            except Exception:
+                pass
         db.close()
 
 
 def init_db():
     """Create tables and seed the admin account if needed."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.executescript("""
+    conn = psycopg2.connect(_require_db_url())
+    try:
+        cur = conn.cursor()
+        cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            id         SERIAL PRIMARY KEY,
             name       TEXT    NOT NULL,
             email      TEXT    NOT NULL UNIQUE,
             pw_hash    TEXT    NOT NULL,
             is_admin   INTEGER NOT NULL DEFAULT 0,
-            created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+            created_at BIGINT  NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW())::BIGINT)
         );
 
         CREATE TABLE IF NOT EXISTS sessions (
             token      TEXT    PRIMARY KEY,
             user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+            created_at BIGINT  NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW())::BIGINT)
         );
 
         CREATE TABLE IF NOT EXISTS screening_results (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            id         SERIAL PRIMARY KEY,
             user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             age_group  TEXT    NOT NULL,
             score      INTEGER NOT NULL,
             band       TEXT    NOT NULL,
-            created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+            created_at BIGINT  NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW())::BIGINT)
         );
-    """)
+        """)
+        conn.commit()
 
-    # Seed admin
-    existing = conn.execute(
-        "SELECT id FROM users WHERE email = ?", (ADMIN_EMAIL,)
-    ).fetchone()
-    if not existing:
-        h = _hash_pw(ADMIN_PASSWORD)
-        conn.execute(
-            "INSERT INTO users (name, email, pw_hash, is_admin) VALUES (?,?,?,1)",
-            ("Admin", ADMIN_EMAIL, h),
-        )
-        print(f"[init] Admin account created: {ADMIN_EMAIL} / {ADMIN_PASSWORD}")
-
-    conn.commit()
-    conn.close()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT id FROM users WHERE email = %s", (ADMIN_EMAIL,))
+        existing = cur.fetchone()
+        if not existing:
+            cur.execute(
+                "INSERT INTO users (name, email, pw_hash, is_admin) VALUES (%s,%s,%s,1)",
+                ("Admin", ADMIN_EMAIL, _hash_pw(ADMIN_PASSWORD)),
+            )
+            conn.commit()
+            print(f"[init] Admin account created: {ADMIN_EMAIL}")
+    finally:
+        conn.close()
 
 
 # ── Password helpers ─────────────────────────────────────
@@ -130,7 +177,7 @@ def require_auth(admin=False):
                 return jsonify({"error": "Unauthorized"}), 401
             db   = get_db()
             row  = db.execute(
-                "SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = ?",
+                "SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = %s",
                 (token,),
             ).fetchone()
             if not row:
@@ -192,18 +239,18 @@ def signup():
         return jsonify({"error": "Password must be at least 6 characters."}), 400
 
     db = get_db()
-    if db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone():
+    if db.execute("SELECT id FROM users WHERE email = %s", (email,)).fetchone():
         return jsonify({"error": "This email is already registered."}), 409
 
     db.execute(
-        "INSERT INTO users (name, email, pw_hash) VALUES (?,?,?)",
+        "INSERT INTO users (name, email, pw_hash) VALUES (%s,%s,%s)",
         (name, email, _hash_pw(pw)),
     )
     db.commit()
 
-    user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+    user = db.execute("SELECT * FROM users WHERE email = %s", (email,)).fetchone()
     token = secrets.token_hex(32)
-    db.execute("INSERT INTO sessions (token, user_id) VALUES (?,?)", (token, user["id"]))
+    db.execute("INSERT INTO sessions (token, user_id) VALUES (%s,%s)", (token, user["id"]))
     db.commit()
 
     return jsonify({"token": token, "user": _user_dict(user)}), 201
@@ -216,12 +263,12 @@ def signin():
     pw    = data.get("password", "")
 
     db   = get_db()
-    user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+    user = db.execute("SELECT * FROM users WHERE email = %s", (email,)).fetchone()
     if not user or not _check_pw(pw, user["pw_hash"]):
         return jsonify({"error": "Email or password doesn't match."}), 401
 
     token = secrets.token_hex(32)
-    db.execute("INSERT INTO sessions (token, user_id) VALUES (?,?)", (token, user["id"]))
+    db.execute("INSERT INTO sessions (token, user_id) VALUES (%s,%s)", (token, user["id"]))
     db.commit()
     return jsonify({"token": token, "user": _user_dict(user)}), 200
 
@@ -230,7 +277,7 @@ def signin():
 @require_auth()
 def signout():
     token = request.headers.get("X-Token")
-    get_db().execute("DELETE FROM sessions WHERE token = ?", (token,))
+    get_db().execute("DELETE FROM sessions WHERE token = %s", (token,))
     get_db().commit()
     return jsonify({"ok": True}), 200
 
@@ -249,7 +296,7 @@ def me():
 @require_auth()
 def get_my_results():
     rows = get_db().execute(
-        "SELECT * FROM screening_results WHERE user_id = ? ORDER BY created_at DESC",
+        "SELECT * FROM screening_results WHERE user_id = %s ORDER BY created_at DESC",
         (g.current_user["id"],),
     ).fetchall()
     return jsonify([dict(r) for r in rows]), 200
@@ -265,7 +312,7 @@ def post_result():
 
     db = get_db()
     db.execute(
-        "INSERT INTO screening_results (user_id, age_group, score, band) VALUES (?,?,?,?)",
+        "INSERT INTO screening_results (user_id, age_group, score, band) VALUES (%s,%s,%s,%s)",
         (g.current_user["id"], age_group, score, band),
     )
     db.commit()
@@ -280,14 +327,14 @@ def post_result():
 @require_auth(admin=True)
 def admin_stats():
     db = get_db()
-    total_users     = db.execute("SELECT COUNT(*) FROM users WHERE is_admin=0").fetchone()[0]
-    total_results   = db.execute("SELECT COUNT(*) FROM screening_results").fetchone()[0]
+    total_users     = db.execute("SELECT COUNT(*) FROM users WHERE is_admin=0").fetchone()["count"]
+    total_results   = db.execute("SELECT COUNT(*) FROM screening_results").fetchone()["count"]
     unique_screened = db.execute(
         "SELECT COUNT(DISTINCT user_id) FROM screening_results"
-    ).fetchone()[0]
+    ).fetchone()["count"]
     many_traits = db.execute(
         "SELECT COUNT(*) FROM screening_results WHERE band='MANY TRAITS'"
-    ).fetchone()[0]
+    ).fetchone()["count"]
     return jsonify({
         "total_users":     total_users,
         "total_results":   total_results,
@@ -313,11 +360,11 @@ def admin_users():
 @require_auth(admin=True)
 def admin_user_detail(user_id):
     db   = get_db()
-    user = db.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+    user = db.execute("SELECT * FROM users WHERE id=%s", (user_id,)).fetchone()
     if not user:
         return jsonify({"error": "Not found"}), 404
     results = db.execute(
-        "SELECT * FROM screening_results WHERE user_id=? ORDER BY created_at DESC",
+        "SELECT * FROM screening_results WHERE user_id=%s ORDER BY created_at DESC",
         (user_id,),
     ).fetchall()
     return jsonify({"user": dict(user), "results": [dict(r) for r in results]}), 200
@@ -327,9 +374,9 @@ def admin_user_detail(user_id):
 @require_auth(admin=True)
 def admin_delete_user(user_id):
     db = get_db()
-    if not db.execute("SELECT id FROM users WHERE id=? AND is_admin=0", (user_id,)).fetchone():
+    if not db.execute("SELECT id FROM users WHERE id=%s AND is_admin=0", (user_id,)).fetchone():
         return jsonify({"error": "Not found"}), 404
-    db.execute("DELETE FROM users WHERE id=?", (user_id,))
+    db.execute("DELETE FROM users WHERE id=%s", (user_id,))
     db.commit()
     return jsonify({"ok": True}), 200
 
