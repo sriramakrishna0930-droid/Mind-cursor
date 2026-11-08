@@ -1,10 +1,23 @@
 .DS_Store
 node_modules/
 
-# Database — never commit real user data
-mindcursor.db
-
-# Python backend — not needed for GitHub Pages static hosting
-server.py
+# Python
 __pycache__/
 *.pyc
+*.pyo
+.env
+*.env
+
+# SQLite database (contains user data — never commit)
+mindcursor.db
+mindcursor.db-wal
+mindcursor.db-shm
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# OS
+Thumbs.db
+favicon.ico
