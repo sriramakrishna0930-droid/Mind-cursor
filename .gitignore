@@ -6,3 +6,6 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+# Keep random_forest.pkl in repo so the server works without re-training
+# Uncomment the line below to exclude the model binary:
+# backend/model/*.pkl

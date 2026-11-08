@@ -69,9 +69,8 @@
     <h1 class="auth-title">Admin<br/>Access.</h1>
 
     <div class="admin-hint">
-      <strong>Default credentials</strong>
-      Email: <code>admin@admin.com</code><br/>
-      Password: <code>admin123</code>
+      <strong>Credentials</strong>
+      Use your admin email and password to sign in.
     </div>
 
     <!-- STEP 1: email -->
@@ -148,7 +147,7 @@
 (function () {
   'use strict';
 
-  var ADMIN_EMAIL = 'admin@admin.com';
+  var ADMIN_EMAIL = 'mindcursor.admin@gmail.com';
   var API = window.MindCursorAPI;
 
   /* Redirect if already logged in */
@@ -178,10 +177,6 @@
       if (!validEmail(em)) {
         markBad(step.querySelector('[name=email]'), true);
         return stepError(step, 'Enter a valid email address.');
-      }
-      if (em !== ADMIN_EMAIL) {
-        markBad(step.querySelector('[name=email]'), true);
-        return stepError(step, 'No admin account found for this email.');
       }
       emailVal = em;
       document.querySelectorAll('.js-echo-email').forEach(function(i){ i.value = em; });

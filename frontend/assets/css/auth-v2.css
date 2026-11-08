@@ -227,3 +227,34 @@
 @keyframes spinfade { 0% { opacity: 1; } 100% { opacity: .15; } }
 
 .confetti-canvas { position: fixed; inset: 0; z-index: 300; pointer-events: none; }
+
+/* ---- password strength rules ---- */
+.pw-rules {
+  list-style: none; margin: 6px 0 4px; padding: 0;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.pw-rule {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 13px; color: #9AA3AB; font-weight: 500;
+  transition: color .2s ease;
+  padding-left: 4px;
+}
+.pw-rule-icon {
+  width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+  border: 1.5px solid #C8CFD2;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; line-height: 1;
+  transition: border-color .2s ease, background .2s ease;
+}
+/* Met state */
+.pw-rule.is-met { color: #1c7a3d; }
+.pw-rule.is-met .pw-rule-icon {
+  border-color: #1c7a3d; background: #e8f7ee;
+}
+.pw-rule.is-met .pw-rule-icon::after { content: "✓"; color: #1c7a3d; font-weight: 700; }
+/* Failed state (after submit attempt) */
+.pw-rule.is-bad { color: #d13438; }
+.pw-rule.is-bad .pw-rule-icon {
+  border-color: #e5484d; background: #fde8e9;
+}
+.pw-rule.is-bad .pw-rule-icon::after { content: "✗"; color: #e5484d; font-weight: 700; }

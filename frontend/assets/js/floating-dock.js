@@ -54,8 +54,13 @@ const FD_DEFAULT_ITEMS = [
 /* Shared: session-aware navigation (also used by CTA buttons). */
 window.MindCursor = window.MindCursor || {};
 window.MindCursor.getSession = function () {
-  try { return JSON.parse(localStorage.getItem("mindcursor_session") || "null"); }
-  catch (e) { return null; }
+  try {
+    // Check both storage keys: legacy mindcursor_session and current mc_token
+    var legacy = JSON.parse(localStorage.getItem("mindcursor_session") || "null");
+    if (legacy) return legacy;
+    var token = localStorage.getItem("mc_token");
+    return token ? { token: token } : null;
+  } catch (e) { return null; }
 };
 window.MindCursor.goScreening = function () {
   location.href = window.MindCursor.getSession() ? "screening.html" : "signup.html";
@@ -77,8 +82,20 @@ function toggleAccountMenu(dock) {
   btn.className = "fdock-signout"; btn.type = "button"; btn.textContent = "Sign out";
   btn.addEventListener("click", function (ev) {
     ev.stopPropagation();
-    try { localStorage.removeItem("mindcursor_session"); } catch (e) {}
-    location.reload();
+    // Call the API signout endpoint to invalidate the server session,
+    // then clear all local storage keys regardless of outcome.
+    var finish = function () {
+      try {
+        localStorage.removeItem("mc_token");
+        localStorage.removeItem("mindcursor_session"); // legacy key
+      } catch (e) {}
+      location.reload();
+    };
+    if (window.MindCursorAPI) {
+      window.MindCursorAPI.signout().then(finish).catch(finish);
+    } else {
+      finish();
+    }
   });
   menu.appendChild(mail); menu.appendChild(btn);
   dock.appendChild(menu);
@@ -95,10 +112,7 @@ function initFloatingDock(mount, items) {
   const list = base.map(function (it) {
     if (it.id === "screening") {
       if (session) return { id: "account", label: "Account", icon: "user", target: "#" };
-      return { id: "screening", label: "Sign up", icon: "signup", target: it.target };
-    }
-    if (session && (it.id === "signin" || it.id === "signup")) {
-      return { id: "account", label: "Account", icon: "user", target: "#" };
+      return { id: "screening", label: "Screening", icon: "screening", target: it.target };
     }
     return it;
   });

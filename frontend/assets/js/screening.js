@@ -446,117 +446,136 @@ function drawPieChart(canvasId, score, total, color){
 
 /* ── RESULT ────────────────────────────────────────────── */
 function showResult(){
-  var total = BANK[state.group].questions.length, sc = calcScore();
-  var band = sc<=3 ? 'FEW TRAITS' : sc<=6 ? 'SOME TRAITS' : 'MANY TRAITS';
-  var rd   = RESULT_DATA[band];
+  var total = BANK[state.group].questions.length;
+  var localSc   = calcScore();
+  var localBand = localSc<=3 ? 'FEW TRAITS' : localSc<=6 ? 'SOME TRAITS' : 'MANY TRAITS';
 
-  /* Save to DB + send email via EmailJS */
-  try { API.postResult(BANK[state.group].label, sc).catch(function(){}); } catch(e){}
-  try {
-    if (window.emailjs) {
-      emailjs.send('service_m6eoqin', 'template_64vyccb', {
-        email: session.email,
-        name: session.name || 'there',
-        score: sc,
-        total: total,
-        score_text: String(sc).padStart(2, '0') + '/' + total,
-        band: band,
-        group: BANK[state.group].label,
-        headline: rd.headline,
-        summary: rd.summary,
-        color: rd.color,
-        suggestions_html: rd.suggestions.map(function(s){
-          return '<li style="margin:0 0 8px 0;">' + s + '</li>';
-        }).join('')
-      }).then(function(){ console.log('MindCursor email sent'); },
-             function(e){ console.log('MindCursor email failed', e); });
+  /* Call Random Forest backend, fall back to local score if unavailable */
+  /* answers: state.answers contains the wp-card data-k values (0-3)     */
+  var rfDone = false;
+
+  function renderResult(sc, band) {
+    if (rfDone) return;   /* guard against double-render */
+    rfDone = true;
+    var rd = RESULT_DATA[band];
+
+    /* Save to DB */
+    try { API.postResult(BANK[state.group].label, sc).catch(function(){}); } catch(e){}
+
+    /* EmailJS */
+    try {
+      if (window.emailjs) {
+        emailjs.send('service_m6eoqin', 'template_64vyccb', {
+          email: session.email,
+          name: session.name || 'there',
+          score: sc,
+          total: total,
+          score_text: String(sc).padStart(2, '0') + '/' + total,
+          band: band,
+          group: BANK[state.group].label,
+          headline: rd.headline,
+          summary: rd.summary,
+          color: rd.color,
+          suggestions_text: rd.suggestions.map(function(s){
+            return '• ' + s;
+          }).join('\n')
+        }).then(function(){ console.log('MindCursor email sent'); },
+               function(e){ console.log('MindCursor email failed', e); });
+      }
+    } catch(e){}
+
+    var suggestionsHtml = rd.suggestions.map(function(s){
+      return '<li class="res-suggest-item">'+s+'</li>';
+    }).join('');
+
+    setP(1);
+    var s=show(
+      '<div class="tlabel"><span class="h">#</span> RESULT \u2014 <b>COMPLETE</b></div>'+
+      '<div class="res-grid">'+
+        '<div class="res-left">'+
+          '<div class="res-band-wrap">'+
+            '<span class="res-icon" style="background:'+rd.color+'">'+rd.icon+'</span>'+
+            '<div>'+
+              '<div class="res-band" style="color:'+rd.color+'">'+band+'</div>'+
+              '<div class="res-headline">'+rd.headline+'</div>'+
+            '</div>'+
+          '</div>'+
+          '<div class="res-score-row">'+
+            '<span class="res-score-num" style="color:'+rd.color+'" id="rn">00</span>'+
+            '<span class="res-score-denom">/'+total+' traits indicated</span>'+
+          '</div>'+
+          '<p class="res-summary">'+rd.summary+'</p>'+
+          '<div class="res-suggestions">'+
+            '<div class="res-suggest-title">'+
+              (band==='FEW TRAITS' ? '\u2665 All good' : '\u26a0 Suggestions for you')+
+            '</div>'+
+            '<ul class="res-suggest-list">'+suggestionsHtml+'</ul>'+
+          '</div>'+
+          '<p class="res-disclaimer">THIS IS A PRELIMINARY SCREENING, NOT A MEDICAL DIAGNOSIS. ONLY A QUALIFIED PROFESSIONAL CAN DIAGNOSE AUTISM SPECTRUM DISORDER.</p>'+
+        '</div>'+
+        '<div class="res-right">'+
+          '<div class="res-chart-wrap">'+
+            '<div class="res-chart-label">'+rd.chartLabel+'</div>'+
+            '<canvas id="pie-chart" width="200" height="200"></canvas>'+
+            '<div class="res-chart-sublabel">Score breakdown</div>'+
+          '</div>'+
+          '<div class="res-image-wrap">'+
+            '<img src="assets/images/screening/result-portrait.webp" alt="Result" class="res-portrait"/>'+
+          '</div>'+
+          '<div class="res-actions">'+
+            '<button class="cbtn" id="r-re">RETAKE \u25a0</button>'+
+            '<button class="cbtn ghost" id="r-hm">BACK HOME</button>'+
+          '</div>'+
+          '<div class="res-email-note" id="res-email-note">'+
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>'+
+            'A result summary has been sent to your email.'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="rmega">RESULT</div>',
+      'darkres res-screen');
+
+    var rnEl=s.querySelector('#rn'), t0=null;
+    function tick(t){
+      if(!t0) t0=t;
+      var p=Math.min(1,(t-t0)/1100),e=1-Math.pow(1-p,3);
+      rnEl.textContent=String(Math.round(e*sc)).padStart(2,'0');
+      if(p<1) requestAnimationFrame(tick);
     }
-  } catch(e){}
+    requestAnimationFrame(tick);
+    setTimeout(function(){rnEl.textContent=String(sc).padStart(2,'0');},1600);
 
-  var suggestionsHtml = rd.suggestions.map(function(s){
-    return '<li class="res-suggest-item">'+s+'</li>';
-  }).join('');
+    drawPieChart('pie-chart', sc, total, rd.color);
 
-  setP(1);
-  var s=show(
-    /* ── top label ── */
-    '<div class="tlabel"><span class="h">#</span> RESULT \u2014 <b>COMPLETE</b></div>'+
-
-    /* ── main result grid ── */
-    '<div class="res-grid">'+
-
-      /* LEFT: big band + summary */
-      '<div class="res-left">'+
-        '<div class="res-band-wrap">'+
-          '<span class="res-icon" style="background:'+rd.color+'">'+rd.icon+'</span>'+
-          '<div>'+
-            '<div class="res-band" style="color:'+rd.color+'">'+band+'</div>'+
-            '<div class="res-headline">'+rd.headline+'</div>'+
-          '</div>'+
-        '</div>'+
-
-        '<div class="res-score-row">'+
-          '<span class="res-score-num" style="color:'+rd.color+'" id="rn">00</span>'+
-          '<span class="res-score-denom">/'+total+' traits indicated</span>'+
-        '</div>'+
-
-        '<p class="res-summary">'+rd.summary+'</p>'+
-
-        '<div class="res-suggestions">'+
-          '<div class="res-suggest-title">'+
-            (band==='FEW TRAITS' ? '\u2665 All good' : '\u26a0 Suggestions for you')+
-          '</div>'+
-          '<ul class="res-suggest-list">'+suggestionsHtml+'</ul>'+
-        '</div>'+
-
-        '<p class="res-disclaimer">THIS IS A PRELIMINARY SCREENING, NOT A MEDICAL DIAGNOSIS. ONLY A QUALIFIED PROFESSIONAL CAN DIAGNOSE AUTISM SPECTRUM DISORDER.</p>'+
-      '</div>'+
-
-      /* RIGHT: pie chart + nav */
-      '<div class="res-right">'+
-        '<div class="res-chart-wrap">'+
-          '<div class="res-chart-label">'+rd.chartLabel+'</div>'+
-          '<canvas id="pie-chart" width="200" height="200"></canvas>'+
-          '<div class="res-chart-sublabel">Score breakdown</div>'+
-        '</div>'+
-
-        '<div class="res-image-wrap">'+
-          '<img src="assets/images/screening/result-portrait.webp" alt="Result" class="res-portrait"/>'+
-        '</div>'+
-
-        '<div class="res-actions">'+
-          '<button class="cbtn" id="r-re">RETAKE \u25a0</button>'+
-          '<button class="cbtn ghost" id="r-hm">BACK HOME</button>'+
-        '</div>'+
-
-        '<div class="res-email-note" id="res-email-note">'+
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>'+
-          'A result summary has been sent to your email.'+
-        '</div>'+
-      '</div>'+
-
-    '</div>'+
-
-    /* ── giant word ── */
-    '<div class="rmega">RESULT</div>',
-    'darkres res-screen');
-
-  /* animate score counter */
-  var rnEl=s.querySelector('#rn'), t0=null;
-  function tick(t){
-    if(!t0) t0=t;
-    var p=Math.min(1,(t-t0)/1100),e=1-Math.pow(1-p,3);
-    rnEl.textContent=String(Math.round(e*sc)).padStart(2,'0');
-    if(p<1) requestAnimationFrame(tick);
+    s.querySelector('#r-re').addEventListener('click',function(){location.reload();});
+    s.querySelector('#r-hm').addEventListener('click',function(){location.href='index.html';});
   }
-  requestAnimationFrame(tick);
-  setTimeout(function(){rnEl.textContent=String(sc).padStart(2,'0');},1600);
 
-  /* draw pie */
-  drawPieChart('pie-chart', sc, total, rd.color);
+  /* ── Try Random Forest backend first (2 s timeout) ── */
+  var rfTimedOut = false;
+  var rfTimer = setTimeout(function(){
+    rfTimedOut = true;
+    renderResult(localSc, localBand);
+  }, 2000);
 
-  s.querySelector('#r-re').addEventListener('click',function(){location.reload();});
-  s.querySelector('#r-hm').addEventListener('click',function(){location.href='index.html';});
+  fetch('/api/predict', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ answers: state.answers })
+  })
+  .then(function(r){ return r.ok ? r.json() : Promise.reject('HTTP ' + r.status); })
+  .then(function(data){
+    clearTimeout(rfTimer);
+    if (!rfTimedOut) {
+      var sc   = (typeof data.rf_score === 'number') ? data.rf_score : localSc;
+      var band = data.rf_band || localBand;
+      renderResult(sc, band);
+    }
+  })
+  .catch(function(){
+    clearTimeout(rfTimer);
+    renderResult(localSc, localBand);
+  });
 }
 
 showHero();

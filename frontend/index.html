@@ -1053,24 +1053,23 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="assets/vendor/odyn-bundle.js" defer></script><script>(function(){var el=document.querySelector(".purpose-heading");if(!el||!("IntersectionObserver" in window)){if(el)el.classList.add("in-view");return;}var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){el.classList.add("in-view");io.disconnect();}});},{threshold:.35});io.observe(el);})();</script><script src="assets/js/floating-dock.js?v=6"></script>
 <script src="assets/js/api.js"></script>
 <script>
-  /* MindCursor global — used by the hero "Start Screening" button */
-  window.MindCursor = {
-    goScreening: function () {
-      if (window.MindCursorAPI && window.MindCursorAPI.getToken()) {
-        location.href = 'screening.html';
-      } else {
-        location.href = 'signup.html';
-      }
+  /* MindCursor global — used by the hero "Start Screening" button.
+     Merge rather than replace so floating-dock.js helpers are preserved. */
+  window.MindCursor = window.MindCursor || {};
+  window.MindCursor.goScreening = function () {
+    if (window.MindCursorAPI && window.MindCursorAPI.getToken()) {
+      location.href = 'screening.html';
+    } else {
+      location.href = 'signup.html';
     }
   };
 </script>
 <script>initFloatingDock(document.getElementById("fdock-mount"), [
-  { id: "home",       label: "Home",       target: "index.html",           icon: "home"      },
-  { id: "about",      label: "About",      target: "about.html",           icon: "about"     },
-  { id: "awareness",  label: "Awareness",  target: "index.html#awareness", icon: "awareness" },
-  { id: "technology", label: "Technology", target: "index.html#technology",icon: "technology"},
-  { id: "signup",     label: "Sign up",    target: "signup.html",          icon: "screening" },
-  { id: "admin",      label: "Admin",      target: "admin-login.html",     icon: "about"     }
+  { id: "home",       label: "Home",       target: "index.html",            icon: "home"       },
+  { id: "about",      label: "About",      target: "about.html",            icon: "about"      },
+  { id: "awareness",  label: "Awareness",  target: "index.html#awareness",  icon: "awareness"  },
+  { id: "technology", label: "Technology", target: "index.html#technology", icon: "technology" },
+  { id: "screening",  label: "Screening",  target: "signup.html",           icon: "screening"  }
 ]);</script>
 
 

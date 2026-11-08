@@ -88,7 +88,38 @@ function initFlow(flow, handlers) {
   return flow;
 }
 
+/* ---------- password rule helpers ---------- */
+var PW_RULES = [
+  { id: 'rule-len',     test: function(v){ return v.length >= 4; } },
+  { id: 'rule-upper',   test: function(v){ return /[A-Z]/.test(v); } },
+  { id: 'rule-lower',   test: function(v){ return /[a-z]/.test(v); } },
+  { id: 'rule-special', test: function(v){ return /[^A-Za-z0-9]/.test(v); } }
+];
+
+function updatePwRules(value, markFailed) {
+  PW_RULES.forEach(function(rule) {
+    var el = document.getElementById(rule.id);
+    if (!el) return;
+    var met = rule.test(value);
+    el.classList.toggle('is-met', met);
+    el.classList.toggle('is-bad', !met && !!markFailed);
+  });
+}
+
+function validatePassword(value, markFailed) {
+  updatePwRules(value, markFailed);
+  return PW_RULES.every(function(rule){ return rule.test(value); });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+  /* Live password rule feedback */
+  var pwInput = document.getElementById('pw-input');
+  if (pwInput) {
+    pwInput.addEventListener('input', function() {
+      updatePwRules(this.value, false);
+    });
+  }
+
   var API = window.MindCursorAPI;
 
   var close = document.getElementById('auth-modal-close');
@@ -125,7 +156,8 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (n === 3) {
           var p1 = q('[name=password]').value;
           markBad(q('[name=password]'), false);
-          if (p1.length < 6) { markBad(q('[name=password]'), true); return stepError(step, 'Password needs at least 6 characters.'); }
+          var pwValid = validatePassword(p1, true);
+          if (!pwValid) { markBad(q('[name=password]'), true); return stepError(step, 'Please meet all password requirements.'); }
           signupData.pw = p1;
           flow._setStep(4);
 

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>Sign up — MindCursor</title>
-<meta content="Create your MindCursor account. Every mind matters." name="description"/>
+<title>Sign in — MindCursor</title>
+<meta content="Sign in to your MindCursor account. Every mind matters." name="description"/>
 <link href="assets/css/auth-v2.css?v=2" rel="stylesheet" type="text/css"/>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin="anonymous"/>
@@ -21,10 +21,10 @@
     <span class="auth-word">MindCursor</span>
   </a>
 
-  <div class="auth-center" id="signup-flow">
+  <div class="auth-center" id="signin-flow">
     <!-- STEP 1: email -->
     <section class="auth-step is-active" data-step="1">
-      <h1 class="auth-title">Get started with Us</h1>
+      <h1 class="auth-title">Welcome back.</h1>
       <div class="auth-field has-go">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
         <input name="email" type="email" placeholder="Email" aria-label="Email" autocomplete="email"/>
@@ -33,24 +33,9 @@
       <p class="auth-error" role="alert"></p>
     </section>
 
-    <!-- STEP 2: name -->
+    <!-- STEP 2: password -->
     <section class="auth-step" data-step="2">
-      <h1 class="auth-title">What's your name?</h1>
-      <p class="auth-sub">Tell us what to call you.</p>
-      <span class="f-label">Full name</span>
-      <div class="auth-field has-go">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <input name="name" type="text" placeholder="Full name" aria-label="Full name" autocomplete="name"/>
-        <button type="button" class="pill-go" data-go aria-label="Continue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
-      </div>
-      <p class="auth-error" role="alert"></p>
-      <button type="button" class="auth-back" data-back>&larr; Go back</button>
-    </section>
-
-    <!-- STEP 3: password -->
-    <section class="auth-step" data-step="3">
-      <h1 class="auth-title">Create your password</h1>
-      <p class="auth-sub">Your password must be at least 6 characters long.</p>
+      <h1 class="auth-title">Enter your password</h1>
       <span class="f-label">Email</span>
       <div class="auth-field">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
@@ -59,29 +44,15 @@
       <span class="f-label">Password</span>
       <div class="auth-field has-go">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <input name="password" type="password" placeholder="Password" aria-label="Password" autocomplete="new-password"/>
-        <button type="button" class="pill-go" data-go aria-label="Continue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
-      </div>
-      <p class="auth-error" role="alert"></p>
-      <button type="button" class="auth-back" data-back>&larr; Go back</button>
-    </section>
-
-    <!-- STEP 4: confirm -->
-    <section class="auth-step" data-step="4">
-      <h1 class="auth-title">One Last Step</h1>
-      <p class="auth-sub">Confirm your password to continue</p>
-      <span class="f-label">Confirm Password</span>
-      <div class="auth-field has-go">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <input name="confirm" type="password" placeholder="Confirm Password" aria-label="Confirm password" autocomplete="new-password"/>
-        <button type="button" class="pill-go" data-go aria-label="Finish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+        <input name="password" type="password" placeholder="Password" aria-label="Password" autocomplete="current-password"/>
+        <button type="button" class="pill-go" data-go aria-label="Sign in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
       </div>
       <p class="auth-error" role="alert"></p>
       <button type="button" class="auth-back" data-back>&larr; Go back</button>
     </section>
   </div>
 
-  <p class="auth-legal">By creating an account you agree to use MindCursor for awareness and preliminary screening only. It is not a medical diagnosis.</p>
+  <p class="auth-legal">MindCursor is for awareness and preliminary screening only. It is not a medical diagnosis.</p>
 </main>
 
 <div class="auth-modal" id="auth-modal" hidden>
@@ -89,7 +60,7 @@
     <button class="auth-modal-close" id="auth-modal-close" aria-label="Close">&times;</button>
     <div id="auth-modal-body">
       <div class="auth-spinner"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-      <p class="auth-modal-text" id="auth-modal-text">Signing you up...</p>
+      <p class="auth-modal-text" id="auth-modal-text">Signing you in...</p>
     </div>
   </div>
 </div>
@@ -100,11 +71,11 @@
 <script src="assets/js/floating-dock.js?v=6"></script>
 <script>
 initFloatingDock(document.getElementById("fdock-mount"), [
-  { id: "home", label: "Home", target: "index.html", icon: "home" },
-  { id: "about", label: "About", target: "about.html", icon: "about" },
-  { id: "awareness", label: "Awareness", target: "index.html#awareness", icon: "awareness" },
+  { id: "home",       label: "Home",       target: "index.html",            icon: "home"       },
+  { id: "about",      label: "About",      target: "about.html",            icon: "about"      },
+  { id: "awareness",  label: "Awareness",  target: "index.html#awareness",  icon: "awareness"  },
   { id: "technology", label: "Technology", target: "index.html#technology", icon: "technology" },
-  { id: "signin", label: "Sign in", target: "signin.html", icon: "screening" }
+  { id: "screening",  label: "Screening",  target: "signup.html",           icon: "screening"  }
 ]);
 </script>
 <script src="assets/js/auth-v2.js"></script>

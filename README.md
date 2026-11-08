@@ -1,64 +1,86 @@
 # MindCursor
 
-AI-assisted autism awareness and preliminary screening platform.
-Static site — no build step, no backend. Open `index.html` or serve the folder.
+An AI-assisted autism awareness and preliminary screening platform — answer 10 questions, get a trait indicator backed by a Random Forest model.  
+**This is a preliminary screening only — not a medical diagnosis.**
 
-## Run it
+---
+
+## Folder structure
+
+```
+Mindcursor-main/
+├── frontend/       All website files (HTML, CSS, JS, images). Served by Flask as static files.
+├── backend/        Flask REST API, Random Forest model, training script, Postgres integration.
+├── .env.example    Template for environment variables — copy to .env and fill in values.
+├── .env            Your local secrets — NEVER committed (listed in .gitignore).
+├── .gitignore      Ignores .env, __pycache__, *.pkl is kept for convenience.
+└── README.md       This file.
+```
+
+---
+
+## How to run the frontend
+
+The frontend is plain HTML/CSS/JS — it is served automatically by the Flask backend.  
+Once the backend is running, open **http://127.0.0.1:5000** in your browser.
+
+---
+
+## How to run the backend
 
 ```bash
-npm start
-# or
-python3 -m http.server 8000
+# 1. Install Python dependencies
+pip install -r backend/requirements.txt
+
+# 2. Copy .env.example to .env
+copy .env.example .env          # Windows
+# cp .env.example .env          # Mac / Linux
+
+# 3. Set DATABASE_URL in .env
+#    Example (local Postgres):
+#    DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/mindcursor
+#
+#    Example (Neon / Render):
+#    DATABASE_URL=postgresql://user:pass@host/dbname?sslmode=require
+
+# 4. Train the Random Forest model (run once; re-run any time to retrain)
+python backend/train.py
+# → prints class distribution and test accuracy
+# → saves backend/model/random_forest.pkl
+
+# 5. Start the server
+python backend/server.py
+# → creates tables (users, sessions, screening_results) if they don't exist
+# → seeds admin account
+# → http://127.0.0.1:5000
 ```
 
-Then open http://localhost:8000 (or http://localhost:3000 with `npm run serve`).
+---
 
-## Pages
+## EmailJS configuration
 
-| Page | What it is |
-| --- | --- |
-| `index.html` | Home — hero, about, work wheel, technology, footer |
-| `screening.html` | Screening quiz (age select → questions → result) |
-| `signin.html` / `signup.html` | Auth pages (front-end only) |
+The result email is sent directly from the browser via EmailJS — no SMTP config needed.
 
-## Folder layout
+| Setting | Value |
+|---------|-------|
+| Public key | `Euwq8CCKEh59BUIN7` |
+| Service ID | `service_m6eoqin` |
+| Template ID | `template_64vyccb` |
 
-```
-index.html  screening.html  signin.html  signup.html
-package.json  README.md
-assets/
-  css/
-    webflow.css       # base Webflow styles
-    works-wheel.css   # 3D work wheel
-    hero-brain.css    # hero brain animation
-    about-ed.css      # about section
-    screening.css     # screening page
-    auth-v2.css       # sign in / sign up
-  js/
-    works-wheel.js    # 3D work wheel — scroll / swipe logic, do not rename its ids
-    screening.js      # quiz questions, options, scoring, result
-    floating-dock.js  # bottom navigation dock
-    signature-footer.js
-    auth-v2.js        # sign in / sign up
-  images/
-    tech/             # tech-01.jpg … tech-06.jpg (technology section)
-    cards/            # work-wheel cards
-    screening/        # hero-bg, opt-a…d, result-portrait
-    icons/            # custom cursors
-    favicon-*.jpg     # site icons (32 / 48 / 180 / 192 / 512)
-    ascii-portrait.png  brain-cut.webp
-  vendor/             # third-party code — do not edit
-    gsap/             # GSAP + ScrollTrigger, SplitText, Inertia, CustomEase, DrawSVG
-    webflow/          # Webflow runtime
-    lenis.min.js      # smooth scroll (Lenis)
-    barba.umd.min.js  # page transitions
-    hls.js  jquery-3.5.1.min.js  webfont.js  odyn-bundle.js
-```
+These are set in `frontend/assets/js/screening.js`. Do not change them.
 
-## Easy edits
+---
 
-- **Text on the home page:** edit `index.html` directly.
-- **Quiz questions / options / scoring:** `assets/js/screening.js` — questions are at the top of the file.
-- **Change an image:** replace the file in `assets/images/` with a file of the same name, or update the `src` in the HTML/JS that uses it.
-- **Work-wheel cards:** images in `assets/images/cards/` + `assets/images/tech/`, behaviour in `assets/js/works-wheel.js` and `assets/css/works-wheel.css`.
-- **Colours / fonts:** `assets/css/webflow.css` (base) and the section CSS files above.
+## Environment variables (`.env`)
+
+| Variable | Where | Description |
+|----------|-------|-------------|
+| `DATABASE_URL` | `.env` | Postgres connection string (primary) |
+| `POSTGRES_URL` | `.env` | Alternative key used by Vercel |
+| `ADMIN_EMAIL` | `.env` | Admin dashboard login email |
+| `ADMIN_PASSWORD` | `.env` | Admin dashboard login password |
+| `PW_PEPPER` | `.env` | Password hash pepper — must stay consistent |
+| `SMTP_USER` | `.env` | Gmail address for server-side email (optional) |
+| `SMTP_PASS` | `.env` | Gmail app password (optional) |
+
+`.env` is listed in `.gitignore` and must never be committed.

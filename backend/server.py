@@ -29,6 +29,7 @@ import secrets
 import time
 from functools import wraps
 
+import joblib
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
@@ -37,7 +38,7 @@ from flask_cors import CORS
 
 # ── Config ──────────────────────────────────────────────
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
-STATIC_DIR = BASE_DIR
+STATIC_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "frontend"))
 
 # PostgreSQL only — no SQLite. Set DATABASE_URL (Render / Neon)
 # or POSTGRES_URL (Vercel) in the environment. No fallback to a file.
@@ -45,11 +46,11 @@ DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") 
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = "postgresql://" + DATABASE_URL[len("postgres://"):]
 
-ADMIN_EMAIL    = os.environ.get("ADMIN_EMAIL", "admin@admin.com")
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")  # change in production via env
+ADMIN_EMAIL    = os.environ.get("ADMIN_EMAIL", "mindcursor.admin@gmail.com")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Admin@Mind2026!")  # change in production via env
 PW_PEPPER      = os.environ.get("PW_PEPPER", "mindcursor$")   # must match the client-side pepper
 
-app = Flask(__name__, static_folder=STATIC_DIR, static_url_path="")
+app = Flask(__name__, static_folder=None)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 
@@ -191,35 +192,54 @@ def require_auth(admin=False):
 
 
 # ── Static file serving ───────────────────────────────────
+# Flask serves all files in frontend/ automatically via static_folder + static_url_path="".
+# Only explicit page routes are needed here.
+
 @app.route("/")
+@app.route("/index.html")
 def index():
     return send_from_directory(STATIC_DIR, "index.html")
 
-
-# Explicit routes for pages with hyphens (Flask routing quirk)
 @app.route("/admin-login")
 @app.route("/admin-login.html")
 def admin_login():
     return send_from_directory(STATIC_DIR, "admin-login.html")
-
 
 @app.route("/admin")
 @app.route("/admin.html")
 def admin_page():
     return send_from_directory(STATIC_DIR, "admin.html")
 
+@app.route("/screening")
+@app.route("/screening.html")
+def screening_page():
+    return send_from_directory(STATIC_DIR, "screening.html")
 
-# Catch-all for all other static files
-@app.route("/<path:filename>")
-def static_files(filename):
-    import os
-    full_path = os.path.join(STATIC_DIR, filename)
-    # If the file doesn't exist but .html version does, serve that
-    if not os.path.isfile(full_path):
-        html_path = filename + ".html"
-        if os.path.isfile(os.path.join(STATIC_DIR, html_path)):
-            return send_from_directory(STATIC_DIR, html_path)
-    return send_from_directory(STATIC_DIR, filename)
+@app.route("/signin")
+@app.route("/signin.html")
+def signin_page():
+    return send_from_directory(STATIC_DIR, "signin.html")
+
+@app.route("/signup")
+@app.route("/signup.html")
+def signup_page():
+    return send_from_directory(STATIC_DIR, "signup.html")
+
+@app.route("/about")
+@app.route("/about.html")
+def about_page():
+    return send_from_directory(STATIC_DIR, "about.html")
+
+
+# Assets and any other static files not under /api/
+@app.route("/assets/<path:filename>")
+def serve_assets(filename):
+    return send_from_directory(os.path.join(STATIC_DIR, "assets"), filename)
+
+
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory(STATIC_DIR, "favicon.ico")
 
 
 # ════════════════════════════════════════════════════════════
@@ -235,8 +255,8 @@ def signup():
 
     if not name or not email or not pw:
         return jsonify({"error": "Name, email and password are required."}), 400
-    if len(pw) < 6:
-        return jsonify({"error": "Password must be at least 6 characters."}), 400
+    if len(pw) < 4:
+        return jsonify({"error": "Password must be at least 4 characters."}), 400
 
     db = get_db()
     if db.execute("SELECT id FROM users WHERE email = %s", (email,)).fetchone():
@@ -543,6 +563,25 @@ def admin_results():
     return jsonify([dict(r) for r in rows]), 200
 
 
+# ── Random Forest model (loaded once at startup) ─────────
+_RF_MODEL = None
+
+def _load_rf_model():
+    global _RF_MODEL
+    if _RF_MODEL is not None:
+        return _RF_MODEL
+    model_path = os.path.join(BASE_DIR, "model", "random_forest.pkl")
+    if os.path.isfile(model_path):
+        try:
+            _RF_MODEL = joblib.load(model_path)
+            print(f"[RF] Model loaded from {model_path}")
+        except Exception as e:
+            print(f"[RF] Failed to load model: {e}")
+    else:
+        print(f"[RF] Model not found at {model_path} — run train.py first")
+    return _RF_MODEL
+
+
 # ── Helpers ───────────────────────────────────────────────
 def _user_dict(row):
     d = dict(row)
@@ -558,9 +597,64 @@ def _band(score: int) -> str:
     return "MANY TRAITS"
 
 
+@app.route("/api/predict", methods=["POST"])
+def predict():
+    """
+    Random Forest preliminary screening predictor.
+    Input : {"answers": [3, 2, 1, 0, 3, 2, 1, 0, 2, 1]}
+              Each answer is 0–3: Definitely agree=3, Slightly agree=2,
+              Slightly disagree=1, Definitely disagree=0.
+    Output: {"rf_score": 7, "rf_band": "MANY TRAITS", "probability": 0.82}
+
+    This is a preliminary screening tool only — not a medical diagnosis.
+    """
+    data    = request.get_json(force=True) or {}
+    answers = data.get("answers", [])
+
+    if len(answers) != 10:
+        return jsonify({"error": "Exactly 10 answers required (values 0–3)."}), 400
+
+    try:
+        answers = [int(a) for a in answers]
+    except (TypeError, ValueError):
+        return jsonify({"error": "All answers must be integers 0–3."}), 400
+
+    # Rule-based score mirrors calcScore() in screening.js
+    # Polarity list for the default question set (1 = trait if agreed, -1 = trait if disagreed)
+    POLARITY = [1, 1, 1, 1, 1, -1, -1, 1, 1, 1]
+    rf_score = 0
+    for i, ans in enumerate(answers):
+        agree = ans <= 1   # Definitely agree (3 mapped → index 0,1 = agree)
+        if (POLARITY[i] == 1 and agree) or (POLARITY[i] == -1 and not agree):
+            rf_score += 1
+
+    model = _load_rf_model()
+    if model is None:
+        # Fallback: use rule-based band, no probability
+        band = _band(rf_score)
+        return jsonify({"rf_score": rf_score, "rf_band": band, "probability": None,
+                        "note": "Model not loaded — using rule-based fallback"}), 200
+
+    import numpy as np
+    X = np.array(answers).reshape(1, -1)
+    pred       = int(model.predict(X)[0])
+    proba      = model.predict_proba(X)[0]
+    confidence = float(round(max(proba), 4))
+
+    band_map = {0: "FEW TRAITS", 1: "SOME TRAITS", 2: "MANY TRAITS"}
+    rf_band  = band_map.get(pred, _band(rf_score))
+
+    return jsonify({
+        "rf_score":   rf_score,
+        "rf_band":    rf_band,
+        "probability": confidence
+    }), 200
+
+
 # ── Run ────────────────────────────────────────────────────
 if __name__ == "__main__":
     init_db()
-    print("MindCursor API  →  http://127.0.0.1:5000")
-    print(f"Admin login     →  http://127.0.0.1:5000/admin-login.html")
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    _load_rf_model()
+    print("MindCursor API  ->  http://127.0.0.1:5000")
+    print(f"Admin login     ->  http://127.0.0.1:5000/admin-login.html")
+    app.run(host="127.0.0.1", port=5000, debug=True, use_reloader=False)
