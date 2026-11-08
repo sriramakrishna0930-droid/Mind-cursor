@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Screening — MindCursor</title>
+<meta content="Take the MindCursor autism screening. Answer a few questions and get your result." name="description"/>
+<link href="assets/css/screening.css?v=3" rel="stylesheet" type="text/css"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<link href="assets/images/favicon-32.jpg" rel="icon" type="image/png" sizes="32x32"/>
+</head>
+<body>
+<div class="grain"></div>
+<div class="edge r">P:<b id="cp">000%</b></div>
+<main class="stage" id="stage"></main>
+<div id="sweep"></div>
+<div id="fdock-mount"></div>
+<script src="assets/js/floating-dock.js?v=6"></script>
+<script>
+initFloatingDock(document.getElementById("fdock-mount"), [
+  { id: "home", label: "Home", target: "index.html", icon: "home" },
+  { id: "about", label: "About", target: "about.html", icon: "about" },
+  { id: "awareness", label: "Awareness", target: "index.html#awareness", icon: "awareness" },
+  { id: "technology", label: "Technology", target: "index.html#technology", icon: "technology" }
+]);
+</script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/screening.js?v=3"></script>
+</body>
+</html>

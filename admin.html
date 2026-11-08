@@ -1,0 +1,1003 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <title>Admin Dashboard â€” MindCursor</title>
+  <meta name="robots" content="noindex, nofollow"/>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin="anonymous"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+  <link href="assets/images/favicon-32.jpg" rel="icon" type="image/png" sizes="32x32"/>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #f5f6fa;
+      --surface:  #ffffff;
+      --border:   #e8eaef;
+      --text:     #0f1117;
+      --muted:    #6b7280;
+      --blue:     #0038ff;
+      --blue-dim: rgba(0,56,255,.08);
+      --green:    #1c7a3d;
+      --green-bg: #e8f7ee;
+      --amber:    #92400e;
+      --amber-bg: #fef3c7;
+      --red:      #c0392b;
+      --red-bg:   rgba(229,72,77,.1);
+      --sidebar:  #0f1117;
+      --sidebar-w:220px;
+    }
+
+    body {
+      font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      min-height: 100svh;
+    }
+
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       SIDEBAR
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--sidebar);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 50;
+      padding: 0 0 1.5rem;
+      overflow-y: auto;
+    }
+
+    .sidebar-brand {
+      display: flex; align-items: center; gap: 10px;
+      padding: 1.4rem 1.25rem 1.2rem;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+      text-decoration: none;
+    }
+    .sidebar-logo {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: var(--blue);
+      display: flex; align-items: center; justify-content: center;
+      flex: none;
+    }
+    .sidebar-logo svg { width: 15px; height: 15px; color: #fff; }
+    .sidebar-wordmark { font-weight: 700; font-size: 15px; color: #fff; letter-spacing: -.01em; }
+    .sidebar-sub { font-size: 10px; color: rgba(255,255,255,.4); letter-spacing: .1em;
+      text-transform: uppercase; display: block; margin-top: 1px; }
+
+    .sidebar-nav { padding: 1rem .75rem; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: .6rem .75rem;
+      border-radius: 8px;
+      font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,.6);
+      text-decoration: none; cursor: pointer;
+      transition: background .15s, color .15s;
+      border: none; background: none; width: 100%; text-align: left;
+    }
+    .nav-item svg { width: 17px; height: 17px; flex: none; }
+    .nav-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+    .nav-item.active { background: var(--blue); color: #fff; }
+
+    .sidebar-footer {
+      padding: .75rem .75rem 0;
+      border-top: 1px solid rgba(255,255,255,.08);
+      margin-top: auto;
+    }
+    .admin-chip {
+      display: flex; align-items: center; gap: 10px;
+      padding: .55rem .75rem;
+    }
+    .admin-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--blue);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fff; flex: none;
+    }
+    .admin-chip-name { font-size: 13px; font-weight: 600; color: #fff; }
+    .admin-chip-role { font-size: 11px; color: rgba(255,255,255,.4); }
+
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       MAIN
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* top bar */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: .9rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+    .topbar-title { font-size: 16px; font-weight: 700; color: var(--text); }
+    .topbar-actions { display: flex; align-items: center; gap: .75rem; }
+    .btn-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--muted); transition: background .15s;
+    }
+    .btn-icon:hover { background: var(--border); }
+    .btn-icon svg { width: 17px; height: 17px; }
+
+    .btn-logout {
+      display: flex; align-items: center; gap: 6px;
+      padding: .45rem 1rem;
+      border-radius: 8px;
+      background: var(--red-bg);
+      border: 1px solid rgba(229,72,77,.25);
+      color: var(--red);
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background .15s;
+    }
+    .btn-logout:hover { background: rgba(229,72,77,.18); }
+    .btn-logout svg { width: 15px; height: 15px; }
+
+    /* content */
+    .content { padding: 2rem; flex: 1; }
+
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       STAT CARDS
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+    }
+    .stat-card-label {
+      font-size: 12px; font-weight: 600;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: .6rem;
+    }
+    .stat-card-value {
+      font-size: 2rem; font-weight: 700;
+      color: var(--text); line-height: 1;
+      margin-bottom: .3rem;
+    }
+    .stat-card-sub { font-size: 12px; color: var(--muted); }
+    .stat-card-icon {
+      float: right; margin-top: -2.6rem;
+      width: 38px; height: 38px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .stat-card-icon svg { width: 20px; height: 20px; }
+    .icon-blue  { background: var(--blue-dim); color: var(--blue); }
+    .icon-green { background: var(--green-bg); color: var(--green); }
+    .icon-amber { background: var(--amber-bg); color: var(--amber); }
+    .icon-red   { background: var(--red-bg);   color: var(--red);   }
+
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       SECTION PANELS
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+    .panel-header {
+      padding: 1.1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .panel-title { font-size: 14px; font-weight: 700; color: var(--text); }
+    .panel-count {
+      font-size: 12px; font-weight: 600; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 999px; padding: 2px 10px;
+    }
+
+    /* search / filter bar */
+    .panel-bar {
+      padding: .75rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .75rem;
+      flex-wrap: wrap;
+    }
+    .search-wrap {
+      position: relative; flex: 1; min-width: 200px;
+    }
+    .search-wrap svg {
+      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      width: 15px; height: 15px; color: var(--muted); pointer-events: none;
+    }
+    .search-input {
+      width: 100%; height: 34px;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg);
+      padding: 0 10px 0 32px;
+      font-family: inherit; font-size: 13px; color: var(--text);
+      outline: none;
+      transition: border-color .15s;
+    }
+    .search-input:focus { border-color: var(--blue); }
+
+    .filter-select {
+      height: 34px; padding: 0 28px 0 10px;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg);
+      font-family: inherit; font-size: 13px; color: var(--text);
+      outline: none; cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       TABLES
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%; border-collapse: collapse;
+      font-size: 13.5px;
+    }
+    thead th {
+      text-align: left; padding: .7rem 1.5rem;
+      font-size: 11.5px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
+      color: var(--muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background .12s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--bg); }
+    tbody td {
+      padding: .85rem 1.5rem;
+      color: var(--text);
+      vertical-align: middle;
+    }
+
+    /* badges */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      border-radius: 999px; font-size: 11.5px; font-weight: 700;
+      letter-spacing: .04em; padding: 3px 10px; white-space: nowrap;
+    }
+    .badge-green { background: var(--green-bg); color: var(--green); }
+    .badge-amber { background: var(--amber-bg); color: var(--amber); }
+    .badge-red   { background: var(--red-bg);   color: var(--red);   }
+    .badge-blue  { background: var(--blue-dim); color: var(--blue); }
+    .badge-gray  { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+    .badge-admin { background: #1c0a36; color: #d8b4fe; }
+
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    /* avatar */
+    .user-cell { display: flex; align-items: center; gap: 10px; }
+    .user-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fff; flex: none;
+    }
+    .user-name  { font-weight: 600; color: var(--text); }
+    .user-email { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+    /* score bar */
+    .score-bar { display: flex; align-items: center; gap: 8px; }
+    .score-track {
+      width: 70px; height: 6px; border-radius: 3px;
+      background: var(--border); overflow: hidden; flex: none;
+    }
+    .score-fill { height: 100%; border-radius: 3px; transition: width .6s ease; }
+
+    /* empty state */
+    .empty-state {
+      text-align: center; padding: 3.5rem 2rem; color: var(--muted);
+    }
+    .empty-state svg { width: 40px; height: 40px; margin: 0 auto 1rem; display: block; opacity: .35; }
+    .empty-state p { font-size: 14px; }
+
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       DETAIL MODAL
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+    .detail-modal {
+      position: fixed; inset: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.5rem;
+    }
+    .detail-modal[hidden] { display: none; }
+    .detail-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(10,10,14,.5);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+    .detail-panel {
+      position: relative; z-index: 1;
+      background: var(--surface);
+      border-radius: 18px;
+      width: 100%; max-width: 640px;
+      max-height: 85dvh;
+      overflow-y: auto;
+      box-shadow: 0 32px 80px rgba(0,0,0,.25);
+      animation: slideUp .25s cubic-bezier(.34,1.2,.64,1);
+    }
+    @keyframes slideUp { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:none} }
+    .detail-header {
+      padding: 1.4rem 1.5rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .detail-header h3 { font-size: 16px; font-weight: 700; }
+    .detail-close {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--muted); flex: none;
+    }
+    .detail-close:hover { background: var(--border); }
+    .detail-close svg { width: 16px; height: 16px; }
+    .detail-body { padding: 1.5rem; }
+    .detail-section { margin-bottom: 1.5rem; }
+    .detail-section-title {
+      font-size: 11px; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: .75rem;
+    }
+    .detail-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: .75rem 1.5rem;
+    }
+    .detail-field-label { font-size: 11.5px; color: var(--muted); margin-bottom: 2px; }
+    .detail-field-value { font-size: 14px; font-weight: 600; color: var(--text); }
+
+    .result-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .8rem 1rem; border-radius: 10px;
+      background: var(--bg); border: 1px solid var(--border);
+      margin-bottom: .6rem;
+    }
+    .result-row:last-child { margin-bottom: 0; }
+    .result-meta { font-size: 13px; }
+    .result-meta strong { font-weight: 700; color: var(--text); }
+    .result-meta span { color: var(--muted); font-size: 12px; display: block; margin-top: 2px; }
+
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       RESPONSIVE
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+    @media (max-width: 1100px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      :root { --sidebar-w: 0px; }
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .content { padding: 1.25rem; }
+    }
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+
+    /* hidden section utility */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* refresh spin */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinning { animation: spin .7s linear infinite; }
+  </style>
+</head>
+
+<body>
+
+<!-- â”€â”€ SIDEBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<aside class="sidebar">
+  <a class="sidebar-brand" href="index.html" target="_blank">
+    <span class="sidebar-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2 2 7l10 5 10-5-10-5z"/>
+        <path d="M2 17l10 5 10-5"/>
+        <path d="M2 12l10 5 10-5"/>
+      </svg>
+    </span>
+    <span>
+      <span class="sidebar-wordmark">MindCursor</span>
+      <span class="sidebar-sub">Admin Panel</span>
+    </span>
+  </a>
+
+  <nav class="sidebar-nav" aria-label="Admin navigation">
+    <button class="nav-item active" data-section="overview">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1"/>
+        <rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/>
+        <rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+      Overview
+    </button>
+
+    <button class="nav-item" data-section="users">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      Users
+    </button>
+
+    <button class="nav-item" data-section="results">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 11l3 3L22 4"/>
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      </svg>
+      Screening Results
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="admin-chip">
+      <div class="admin-avatar" id="admin-avatar-sidebar">A</div>
+      <div>
+        <div class="admin-chip-name" id="admin-name-sidebar">Admin</div>
+        <div class="admin-chip-role">Administrator</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- â”€â”€ MAIN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<div class="main">
+
+  <!-- top bar -->
+  <header class="topbar">
+    <span class="topbar-title" id="topbar-title">Overview</span>
+    <div class="topbar-actions">
+      <button class="btn-icon" id="btn-refresh" title="Refresh data">
+        <svg id="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+          <path d="M21 3v5h-5"/>
+          <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+          <path d="M8 16H3v5"/>
+        </svg>
+      </button>
+      <button class="btn-logout" id="btn-logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Sign out
+      </button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- â•â• OVERVIEW â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="section active" id="section-overview">
+
+      <div class="stats-grid" id="stats-grid">
+        <!-- filled by JS -->
+      </div>
+
+      <!-- Recent Results preview -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Recent Screening Activity</span>
+          <button class="nav-item" data-section="results"
+            style="padding:.35rem .85rem;font-size:12px;border-radius:8px;gap:5px;color:var(--blue);background:var(--blue-dim);width:auto;">
+            View all â†’
+          </button>
+        </div>
+        <div class="table-wrap" id="overview-results-table"></div>
+      </div>
+
+    </div>
+
+    <!-- â•â• USERS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="section" id="section-users">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Registered Users</span>
+          <span class="panel-count" id="users-count">0</span>
+        </div>
+        <div class="panel-bar">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input class="search-input" id="users-search" placeholder="Search by name or emailâ€¦" type="search"/>
+          </div>
+          <select class="filter-select" id="users-filter">
+            <option value="all">All users</option>
+            <option value="screened">Screened</option>
+            <option value="not-screened">Not screened</option>
+            <option value="admin">Admins</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Joined</th>
+                <th>Screenings</th>
+                <th>Last active</th>
+                <th>Role</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+          <div id="users-empty" class="empty-state" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+            </svg>
+            <p>No users match your filter.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- â•â• RESULTS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="section" id="section-results">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Screening Results</span>
+          <span class="panel-count" id="results-count">0</span>
+        </div>
+        <div class="panel-bar">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input class="search-input" id="results-search" placeholder="Search by emailâ€¦" type="search"/>
+          </div>
+          <select class="filter-select" id="results-band">
+            <option value="all">All results</option>
+            <option value="FEW TRAITS">Few Traits</option>
+            <option value="SOME TRAITS">Some Traits</option>
+            <option value="MANY TRAITS">Many Traits</option>
+          </select>
+          <select class="filter-select" id="results-group">
+            <option value="all">All age groups</option>
+            <option value="12â€“18">Teens (12â€“18)</option>
+            <option value="18â€“30">Young adults (18â€“30)</option>
+            <option value="30+">Adults (30+)</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>User</th>
+                <th>Age Group</th>
+                <th>Score</th>
+                <th>Result</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="results-tbody"></tbody>
+          </table>
+          <div id="results-empty" class="empty-state" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+            <p>No results match your filter.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- â”€â”€ USER DETAIL MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<div class="detail-modal" id="user-detail-modal" hidden>
+  <div class="detail-backdrop" id="user-detail-backdrop"></div>
+  <div class="detail-panel">
+    <div class="detail-header">
+      <h3 id="detail-modal-title">User Details</h3>
+      <button class="detail-close" id="user-detail-close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="detail-body" id="user-detail-body"></div>
+  </div>
+</div>
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     ADMIN DASHBOARD SCRIPT
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<script src="assets/js/api.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var API = window.MindCursorAPI;
+
+  /* â”€â”€ Auth guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  if (!API.getAdminToken()) { location.replace('admin-login.html'); return; }
+
+  /* â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  function escHtml(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function fmtDate(ts) {
+    if (!ts) return 'â€”';
+    return new Date(ts * 1000).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  }
+  function fmtTime(ts) {
+    if (!ts) return 'â€”';
+    var d = new Date(ts * 1000);
+    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) + ' ' +
+           d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  }
+  function avatarColor(email) {
+    var colors = ['#0038ff','#1c7a3d','#b45309','#7c3aed','#0891b2','#db2777'];
+    return colors[((email||'').charCodeAt(0)||0) % colors.length];
+  }
+  function initials(name) {
+    if (!name) return '?';
+    var p = name.trim().split(' ');
+    return (p[0][0] + (p[1] ? p[1][0] : '')).toUpperCase();
+  }
+  function badgeForBand(band) {
+    if (band === 'FEW TRAITS')  return '<span class="badge badge-green"><span class="badge-dot"></span>Few Traits</span>';
+    if (band === 'SOME TRAITS') return '<span class="badge badge-amber"><span class="badge-dot"></span>Some Traits</span>';
+    if (band === 'MANY TRAITS') return '<span class="badge badge-red"><span class="badge-dot"></span>Many Traits</span>';
+    return '<span class="badge badge-gray">â€”</span>';
+  }
+  function scoreColor(sc) {
+    if (sc <= 3) return '#1c7a3d';
+    if (sc <= 6) return '#b45309';
+    return '#c0392b';
+  }
+  function showError(msg) {
+    console.error(msg);
+  }
+
+  /* â”€â”€ Cache â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  var cache = { stats: null, users: null, results: null };
+
+  function loadAll() {
+    return Promise.all([
+      API.adminStats().then(function(d){ cache.stats   = d; }),
+      API.adminUsers().then(function(d){ cache.users   = d; }),
+      API.adminResults().then(function(d){ cache.results = d; }),
+    ]).catch(function(err){
+      if (err === 'Invalid or expired session' || err === 'Admin access required') {
+        API.setAdminToken(null);
+        location.replace('admin-login.html');
+      }
+      showError(err);
+    });
+  }
+
+  /* â”€â”€ Sidebar / topbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  var sectionTitles = { overview:'Overview', users:'Users', results:'Screening Results' };
+
+  function switchSection(key) {
+    document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
+    var el = document.getElementById('section-' + key);
+    if (el) el.classList.add('active');
+    document.querySelectorAll('.nav-item[data-section]').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-section') === key);
+    });
+    document.getElementById('topbar-title').textContent = sectionTitles[key] || key;
+
+    if (key === 'overview') renderOverview();
+    if (key === 'users')    renderUsers();
+    if (key === 'results')  renderResults();
+  }
+
+  document.querySelectorAll('[data-section]').forEach(function(btn){
+    btn.addEventListener('click', function(){ switchSection(btn.getAttribute('data-section')); });
+  });
+
+  /* â”€â”€ Logout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  document.getElementById('btn-logout').addEventListener('click', function(){
+    API.setAdminToken(null);
+    location.href = 'admin-login.html';
+  });
+
+  /* â”€â”€ Refresh â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  document.getElementById('btn-refresh').addEventListener('click', function(){
+    var icon = document.getElementById('refresh-icon');
+    icon.classList.add('spinning');
+    loadAll().then(function(){
+      icon.classList.remove('spinning');
+      renderCurrent();
+    });
+  });
+  function renderCurrent() {
+    var active = document.querySelector('.section.active');
+    if (!active) return;
+    switchSection(active.id.replace('section-',''));
+  }
+
+  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     OVERVIEW
+  â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+  function renderOverview() {
+    var s = cache.stats || {};
+    var statsHtml = [
+      { label:'Total Users',     value: s.total_users     || 0, sub:'Registered accounts',        iconClass:'icon-blue',
+        icon:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>'},
+      { label:'Screenings Done', value: s.total_results   || 0, sub:'All-time submissions',        iconClass:'icon-green',
+        icon:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'},
+      { label:'Users Screened',  value: s.unique_screened || 0, sub:'Unique participants',         iconClass:'icon-amber',
+        icon:'<circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>'},
+      { label:'Many Traits',     value: s.many_traits     || 0, sub:'Recommend professional eval', iconClass:'icon-red',
+        icon:'<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'},
+    ].map(function(st){
+      return '<div class="stat-card">' +
+        '<div class="stat-card-icon ' + st.iconClass + '">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + st.icon + '</svg>' +
+        '</div>' +
+        '<div class="stat-card-label">' + st.label + '</div>' +
+        '<div class="stat-card-value">' + st.value + '</div>' +
+        '<div class="stat-card-sub">' + st.sub + '</div>' +
+      '</div>';
+    }).join('');
+    document.getElementById('stats-grid').innerHTML = statsHtml;
+
+    /* recent 5 results */
+    var recent = (cache.results || []).slice(0, 5);
+    var table = recent.length === 0
+      ? '<div class="empty-state"><p>No screenings recorded yet.</p></div>'
+      : '<table><thead><tr><th>User</th><th>Age Group</th><th>Score</th><th>Result</th><th>Date</th></tr></thead><tbody>' +
+        recent.map(function(r){
+          var fill = Math.round(r.score / 10 * 100);
+          return '<tr><td><div class="user-cell">' +
+            '<div class="user-avatar" style="background:' + avatarColor(r.user_email) + ';width:28px;height:28px;font-size:12px">' +
+              (r.user_email||'?')[0].toUpperCase() +
+            '</div>' +
+            '<div><div class="user-name" style="font-size:13px">' + escHtml(r.user_name||r.user_email) + '</div>' +
+                 '<div class="user-email">' + escHtml(r.user_email) + '</div></div>' +
+          '</div></td>' +
+          '<td><span class="badge badge-gray">' + escHtml(r.age_group) + '</span></td>' +
+          '<td><div class="score-bar"><strong style="font-size:13px;min-width:28px">' + r.score + '/10</strong>' +
+            '<div class="score-track"><div class="score-fill" style="width:' + fill + '%;background:' + scoreColor(r.score) + '"></div></div></div></td>' +
+          '<td>' + badgeForBand(r.band) + '</td>' +
+          '<td style="color:var(--muted);font-size:12px">' + fmtDate(r.created_at) + '</td></tr>';
+        }).join('') + '</tbody></table>';
+    document.getElementById('overview-results-table').innerHTML = table;
+  }
+
+  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     USERS TABLE
+  â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+  function renderUsers() {
+    var users  = cache.users || [];
+    var search = (document.getElementById('users-search').value || '').toLowerCase();
+    var filter = document.getElementById('users-filter').value;
+
+    var filtered = users.filter(function(u){
+      var matchSearch = !search ||
+        (u.name||'').toLowerCase().includes(search) ||
+        (u.email||'').toLowerCase().includes(search);
+      if (!matchSearch) return false;
+      if (filter === 'screened')     return (u.result_count||0) > 0;
+      if (filter === 'not-screened') return (u.result_count||0) === 0;
+      return true;
+    });
+
+    document.getElementById('users-count').textContent = filtered.length;
+    var tbody = document.getElementById('users-tbody');
+    var empty = document.getElementById('users-empty');
+
+    if (filtered.length === 0) { tbody.innerHTML = ''; empty.hidden = false; return; }
+    empty.hidden = true;
+
+    tbody.innerHTML = filtered.map(function(u){
+      var color = avatarColor(u.email);
+      return '<tr>' +
+        '<td><div class="user-cell">' +
+          '<div class="user-avatar" style="background:' + color + '">' + initials(u.name||u.email) + '</div>' +
+          '<div><div class="user-name">' + escHtml(u.name||'â€”') + '</div>' +
+               '<div class="user-email">' + escHtml(u.email) + '</div></div>' +
+        '</div></td>' +
+        '<td style="color:var(--muted);font-size:12px">' + fmtDate(u.created_at) + '</td>' +
+        '<td>' + ((u.result_count||0) > 0
+          ? '<span class="badge badge-blue">' + u.result_count + ' screening' + (u.result_count>1?'s':'') + '</span>'
+          : '<span class="badge badge-gray">None</span>') + '</td>' +
+        '<td style="color:var(--muted);font-size:12px">' + fmtDate(u.last_screening) + '</td>' +
+        '<td><span class="badge badge-gray">User</span></td>' +
+        '<td style="display:flex;gap:6px">' +
+          '<button class="btn-icon" style="border-radius:7px" data-view-user="' + u.id + '" title="View details">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+          '</button>' +
+          '<button class="btn-icon" style="border-radius:7px;color:var(--red)" data-delete-user="' + u.id + '" data-user-name="' + escHtml(u.name||u.email) + '" title="Delete user">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>' +
+          '</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  document.getElementById('users-search').addEventListener('input', renderUsers);
+  document.getElementById('users-filter').addEventListener('change', renderUsers);
+
+  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     RESULTS TABLE
+  â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+  function renderResults() {
+    var results = cache.results || [];
+    var search  = (document.getElementById('results-search').value || '').toLowerCase();
+    var band    = document.getElementById('results-band').value;
+    var group   = document.getElementById('results-group').value;
+
+    var filtered = results.filter(function(r){
+      if (search && !(r.user_email||'').toLowerCase().includes(search) &&
+                    !(r.user_name||'').toLowerCase().includes(search)) return false;
+      if (band  !== 'all' && r.band      !== band)  return false;
+      if (group !== 'all' && r.age_group !== group) return false;
+      return true;
+    });
+
+    document.getElementById('results-count').textContent = filtered.length;
+    var tbody = document.getElementById('results-tbody');
+    var empty = document.getElementById('results-empty');
+
+    if (filtered.length === 0) { tbody.innerHTML = ''; empty.hidden = false; return; }
+    empty.hidden = true;
+
+    tbody.innerHTML = filtered.map(function(r, i){
+      var fill = Math.round(r.score / 10 * 100);
+      return '<tr>' +
+        '<td style="color:var(--muted);font-size:12px;font-weight:600">' + (i+1) + '</td>' +
+        '<td><div class="user-cell">' +
+          '<div class="user-avatar" style="background:' + avatarColor(r.user_email) + ';width:28px;height:28px;font-size:11px">' +
+            (r.user_email||'?')[0].toUpperCase() +
+          '</div>' +
+          '<div><div class="user-name" style="font-size:13px">' + escHtml(r.user_name||'â€”') + '</div>' +
+               '<div class="user-email">' + escHtml(r.user_email) + '</div></div>' +
+        '</div></td>' +
+        '<td><span class="badge badge-gray">' + escHtml(r.age_group) + '</span></td>' +
+        '<td><div class="score-bar"><strong style="font-size:13px;min-width:30px">' + r.score + '/10</strong>' +
+          '<div class="score-track"><div class="score-fill" style="width:' + fill + '%;background:' + scoreColor(r.score) + '"></div></div></div></td>' +
+        '<td>' + badgeForBand(r.band) + '</td>' +
+        '<td style="color:var(--muted);font-size:12px;white-space:nowrap">' + fmtTime(r.created_at) + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  document.getElementById('results-search').addEventListener('input', renderResults);
+  document.getElementById('results-band').addEventListener('change', renderResults);
+  document.getElementById('results-group').addEventListener('change', renderResults);
+
+  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     USER DETAIL MODAL
+  â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+  function openUserDetail(userId) {
+    API.adminUserDetail(userId).then(function(data) {
+      var user    = data.user    || {};
+      var results = data.results || [];
+      var color   = avatarColor(user.email);
+
+      document.getElementById('detail-modal-title').textContent = 'User â€” ' + (user.name || user.email);
+
+      var resultsHtml = results.length === 0
+        ? '<p style="color:var(--muted);font-size:13px">This user has not completed any screenings yet.</p>'
+        : results.map(function(r){
+            return '<div class="result-row">' +
+              '<div class="result-meta">' +
+                '<strong>' + r.score + '/10 â€” ' + r.band + '</strong>' +
+                '<span>Age group: ' + escHtml(r.age_group) + ' &nbsp;Â·&nbsp; ' + fmtTime(r.created_at) + '</span>' +
+              '</div>' +
+              badgeForBand(r.band) +
+            '</div>';
+          }).join('');
+
+      var lastAt = results.length ? Math.max.apply(null, results.map(function(r){ return r.created_at; })) : null;
+
+      document.getElementById('user-detail-body').innerHTML =
+        '<div class="detail-section">' +
+          '<div style="display:flex;align-items:center;gap:14px;margin-bottom:1.5rem">' +
+            '<div style="width:52px;height:52px;border-radius:50%;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex:none">' + initials(user.name||user.email) + '</div>' +
+            '<div><div style="font-size:17px;font-weight:700">' + escHtml(user.name||'â€”') + '</div>' +
+                 '<div style="font-size:13px;color:var(--muted)">' + escHtml(user.email) + '</div></div>' +
+          '</div>' +
+          '<div class="detail-grid">' +
+            '<div><div class="detail-field-label">Joined</div><div class="detail-field-value">' + fmtDate(user.created_at) + '</div></div>' +
+            '<div><div class="detail-field-label">Role</div><div class="detail-field-value">User</div></div>' +
+            '<div><div class="detail-field-label">Total Screenings</div><div class="detail-field-value">' + results.length + '</div></div>' +
+            '<div><div class="detail-field-label">Last Screening</div><div class="detail-field-value">' + fmtDate(lastAt) + '</div></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="detail-section">' +
+          '<div class="detail-section-title">Screening History</div>' +
+          resultsHtml +
+        '</div>';
+
+      document.getElementById('user-detail-modal').removeAttribute('hidden');
+      document.getElementById('user-detail-close').focus();
+    }).catch(showError);
+  }
+
+  function closeUserDetail() {
+    document.getElementById('user-detail-modal').setAttribute('hidden', '');
+  }
+  document.getElementById('user-detail-close').addEventListener('click', closeUserDetail);
+  document.getElementById('user-detail-backdrop').addEventListener('click', closeUserDetail);
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeUserDetail(); });
+
+  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     DELEGATED CLICKS
+  â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+  document.addEventListener('click', function(e){
+    var viewBtn   = e.target.closest('[data-view-user]');
+    var deleteBtn = e.target.closest('[data-delete-user]');
+
+    if (viewBtn) {
+      openUserDetail(parseInt(viewBtn.getAttribute('data-view-user'), 10));
+    }
+
+    if (deleteBtn) {
+      var uid  = parseInt(deleteBtn.getAttribute('data-delete-user'), 10);
+      var name = deleteBtn.getAttribute('data-user-name') || 'this user';
+      if (!confirm('Delete ' + name + '?\n\nThis will also delete all their screening results. This cannot be undone.')) return;
+      API.adminDeleteUser(uid).then(function(){
+        /* Remove from cache and re-render */
+        cache.users   = (cache.users   || []).filter(function(u){ return u.id !== uid; });
+        cache.results = (cache.results || []).filter(function(r){ return r.user_id !== uid; });
+        renderUsers();
+        renderOverview();
+      }).catch(showError);
+    }
+  });
+
+  /* â”€â”€ Initial load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  loadAll().then(function(){ renderOverview(); });
+
+})();
+</script>
+
+
+</body>
+</html>

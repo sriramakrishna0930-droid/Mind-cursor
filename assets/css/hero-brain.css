@@ -1,0 +1,48 @@
+/* Section 1 — brain hero. Built 2026-11-03.
+   Adds: START SCREENING pill + globe, annotated brain (leader lines, nodes,
+   captions). Removes: eyebrow. All Odyn animation hooks (data-text-reveal,
+   marquee, btn-link) are untouched. */
+.hero-top{display:flex;flex-direction:column;align-items:center;gap:10px;
+  margin:26px auto 0;position:relative;z-index:5;}
+.hero-pill{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;
+  letter-spacing:.24em;text-transform:uppercase;border:1px solid #101010;
+  border-radius:999px;padding:10px 26px 10px 30px;color:#101010;
+  background:transparent;cursor:pointer;transition:background .25s,color .25s;}
+.hero-pill:hover{background:#101010;color:#fff;}
+.hero-globe{width:26px;height:26px;color:#101010;}
+/* brain: own #f4f4f4 bg + isolation so the multiply blend always has a
+   backdrop (the site CSS isolates stacking contexts above it) */
+.hero-brain{position:relative;width:min(28vw,400px);margin:18px auto 110px;
+  background:#f4f4f4;isolation:isolate;z-index:4;}
+.hero-brain img{width:100%;display:block;mix-blend-mode:multiply;
+  animation:heroFloat 7s ease-in-out infinite;}
+@keyframes heroFloat{0%,100%{transform:translateY(-2.5%);}50%{transform:translateY(2.5%);}}
+/* leader lines anchored to the brain wrapper */
+.wires{position:absolute;inset:0;overflow:visible !important;pointer-events:none;}
+.wires path{fill:none;stroke:#101010;stroke-width:1;}
+.node{position:absolute;z-index:6;width:15px;height:15px;background:#fff;
+  border:1.5px solid #101010;pointer-events:none;transform:translate(-50%,-50%);}
+.node::after{content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;
+  background:#101010;transform:translate(-50%,-50%);}
+.cap{position:absolute;z-index:6;font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:10px;letter-spacing:.14em;line-height:1.8;text-transform:uppercase;
+  max-width:220px;color:#101010;}
+.cap .rule{display:block;width:56px;height:1px;background:#101010;margin-top:6px;}
+/* headline sits below the brain, sized to keep section 1 in one viewport */
+.hero_content .heading-xxl{font-size:clamp(36px,5vw,90px);line-height:1.04;}
+@media (max-width:900px){
+  .hero-top{margin-top:16px;}
+  .hero-pill{font-size:9px;padding:8px 18px 8px 22px;letter-spacing:.2em;}
+  .hero-globe{width:20px;height:20px;}
+  .hero-brain{width:62vw;margin-top:12px;}
+  .cap{font-size:7.5px;letter-spacing:.1em;max-width:130px;}
+  .cap .rule{width:34px;}
+  .cap-left{left:-24% !important;top:64% !important;max-width:104px;}
+  .w-right{display:none;}
+  .wires{display:none;}
+  .cap-right{display:none;}
+  .cap-bottom{left:-20% !important;}
+  .node{width:11px;height:11px;}
+  .node::after{width:4px;height:4px;}
+  .hero_content .heading-xxl{font-size:clamp(32px,9vw,52px);}
+}

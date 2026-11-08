@@ -1,0 +1,21 @@
+/* About — editorial section (approved sample). Scoped ae- classes. */
+.about-ed{position:relative;min-height:100vh;min-height:100dvh;background:#f4f4f4;color:#101010;
+  font-family:"Cormorant Garamond",Georgia,serif;overflow:hidden;padding:90px 48px 0;}
+.about-ed .ae-cols{position:relative;z-index:3;display:flex;justify-content:space-between;gap:40px;
+  max-width:1500px;margin:0 auto;}
+.about-ed .ae-col{max-width:400px;font-size:21px;line-height:1.65;font-weight:500;}
+.about-ed .ae-col.ae-right{margin-top:110px;}
+.about-ed .ae-portrait{position:absolute;z-index:2;left:50%;top:8%;transform:translateX(-50%);
+  width:min(30vw,420px);}
+.about-ed .ae-portrait img{width:100%;display:block;}
+.about-ed .ae-giant{position:absolute;z-index:1;left:0;right:0;bottom:-6vw;text-align:center;
+  font-style:italic;font-weight:500;font-size:37vw;line-height:.78;letter-spacing:-.01em;
+  color:#101010;white-space:nowrap;pointer-events:none;user-select:none;}
+@media (max-width:900px){
+  .about-ed{padding:70px 24px 0;}
+  .about-ed .ae-cols{flex-direction:column;}
+  .about-ed .ae-col{max-width:none;font-size:18px;}
+  .about-ed .ae-col.ae-right{margin-top:0;}
+  .about-ed .ae-portrait{position:relative;top:0;margin:30px auto;width:min(70vw,340px);}
+  .about-ed .ae-giant{font-size:44vw;}
+}

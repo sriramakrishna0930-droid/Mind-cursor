@@ -1,0 +1,42 @@
+/* Works-wheel — ring-to-drum 3D card wheel (vanilla port of the 21st.dev @crafterui works-wheel motion) */
+.ww-stage{position:relative;height:92vh;min-height:620px;overflow:hidden;outline:none;cursor:grab;
+  width:100vw;max-width:100vw;margin-left:calc(50% - 50vw);background:transparent;
+  user-select:none;-webkit-user-select:none;touch-action:none;}
+.ww-stage:active{cursor:grabbing;}
+.ww-wheel{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d;}
+.ww-card{position:absolute;left:0;top:0;transform-style:preserve-3d;will-change:transform,opacity;}
+.ww-face{width:100%;height:100%;background:#fff;border:1px solid #e4e4e4;border-radius:14px;
+  box-shadow:0 18px 40px -18px rgba(0,0,0,.14);padding:26px 28px;display:flex;flex-direction:column;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;}
+.ww-top{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.ww-ico{width:38px;height:38px;border-radius:50%;background:#101010;color:#fff;display:flex;
+  align-items:center;justify-content:center;flex:none;transition:background .3s;}
+.ww-ico svg{width:20px;height:20px;}
+.ww-label{font-size:26px;font-weight:500;letter-spacing:-.01em;color:#8a8a8a;transition:color .3s;}
+.ww-desc{font-size:21px;line-height:1.35;letter-spacing:-.01em;flex:1;color:#101010;}
+.ww-date{font-size:15px;color:#8a8a8a;}
+.ww-card.is-active .ww-ico{background:#0038ff;}
+.ww-card.is-active .ww-label{color:#0038ff;}
+.ww-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  font-family:"Instrument Serif",Georgia,serif;font-size:min(9vw,120px);line-height:1;
+  white-space:nowrap;pointer-events:none;color:#101010;}
+.ww-title{position:absolute;left:6%;top:50%;transform:translateY(-50%);
+  font-family:"Instrument Serif",Georgia,serif;font-size:min(6vw,84px);line-height:1.05;
+  max-width:26vw;opacity:0;pointer-events:none;color:#101010;}
+.ww-index{position:absolute;right:4%;top:50%;transform:translateY(-50%);display:flex;
+  flex-direction:column;gap:2px;text-align:right;z-index:20;}
+.ww-index button{background:none;border:0;font:inherit;font-size:14px;line-height:1.9;color:#a3a3a3;
+  cursor:pointer;text-align:right;padding:0;transition:color .25s;}
+.ww-index button:hover{color:#101010;}
+.ww-index button.on{color:#101010;font-weight:600;}
+.ww-hint{position:absolute;left:34px;bottom:26px;font-size:12px;
+  letter-spacing:.14em;text-transform:uppercase;color:#999;pointer-events:none;transition:opacity .4s;white-space:nowrap;}
+@media (max-width:640px){
+  .ww-stage{min-height:520px;}
+  .ww-index{display:none;}
+  .ww-title{font-size:11vw;max-width:60vw;left:8%;}
+  .ww-face{padding:18px 20px;}
+  .ww-label{font-size:20px;}
+  .ww-desc{font-size:16px;}
+  .ww-ico{width:30px;height:30px;}
+}
